@@ -541,6 +541,118 @@ function write_makefiles() {
 }
 
 #
+# append_firmware_calls_to_makefiles:
+#
+# Appends to Android.mk the calls to all images present in radio folder
+# (filesmap file used by releasetools to map firmware images should be kept in the device tree)
+#
+function append_firmware_calls_to_makefiles() {
+    cat << EOF >> "$ANDROIDMK"
+ifeq (\$(LOCAL_PATH)/radio, \$(wildcard \$(LOCAL_PATH)/radio))
+
+RADIO_FILES := \$(wildcard \$(LOCAL_PATH)/radio/*)
+\$(foreach f, \$(notdir \$(RADIO_FILES)), \\
+    \$(call add-radio-file,radio/\$(f)))
+\$(call add-radio-file,../../../device/$VENDOR/$DEVICE/radio/filesmap)
+
+endif
+
+EOF
+}
+
+#
+# get_file:
+#
+# $1: input file
+# $2: target file/folder
+# $3: source of the file (can be "adb" or a local folder)
+#
+# Silently extracts the input file to defined target
+# Returns success if file can be pulled from the device or found locally
+#
+function get_file() {
+    local SRC="$3"
+
+    if [ "$SRC" = "adb" ]; then
+        # try to pull
+        adb pull "$1" "$2" >/dev/null 2>&1 && return 0
+
+        return 1
+    else
+        # try to copy
+        cp -r "$SRC/$1" "$2" 2>/dev/null && return 0
+
+        return 1
+    fi
+};
+
+#
+# oat2dex:
+#
+# $1: extracted apk|jar (to check if deodex is required)
+# $2: odexed apk|jar to deodex
+# $3: source of the odexed apk|jar
+#
+# Convert apk|jar .odex in the corresposing classes.dex
+#
+function oat2dex() {
+    local CM_TARGET="$1"
+    local OEM_TARGET="$2"
+    local SRC="$3"
+    local TARGET=
+    local OAT=
+
+    if [ -z "$BAKSMALIJAR" ] || [ -z "$SMALIJAR" ]; then
+        export BAKSMALIJAR="$CM_ROOT"/vendor/cm/build/tools/smali/baksmali.jar
+        export SMALIJAR="$CM_ROOT"/vendor/cm/build/tools/smali/smali.jar
+    fi
+
+    # Extract existing boot.oats to the temp folder
+    if [ -z "$ARCHES" ]; then
+        echo "Checking if system is odexed and locating boot.oats..."
+        for ARCH in "arm64" "arm" "x86_64" "x86"; do
+            mkdir -p "$TMPDIR/system/framework/$ARCH"
+            if get_file "system/framework/$ARCH/" "$TMPDIR/system/framework/" "$SRC"; then
+                ARCHES+="$ARCH "
+            else
+                rmdir "$TMPDIR/system/framework/$ARCH"
+            fi
+        done
+    fi
+
+    if [ -z "$ARCHES" ]; then
+        FULLY_DEODEXED=1 && return 0 # system is fully deodexed, return
+    fi
+
+    if [ ! -f "$CM_TARGET" ]; then
+        return;
+    fi
+
+    if grep "classes.dex" "$CM_TARGET" >/dev/null; then
+        return 0 # target apk|jar is already odexed, return
+    fi
+
+    for ARCH in $ARCHES; do
+        BOOTOAT="$TMPDIR/system/framework/$ARCH/boot.oat"
+
+        local OAT="$(dirname "$OEM_TARGET")/oat/$ARCH/$(basename "$OEM_TARGET" ."${OEM_TARGET##*.}").odex"
+
+        if get_file "$OAT" "$TMPDIR" "$SRC"; then
+            java -jar "$BAKSMALIJAR" deodex -o "$TMPDIR/dexout" -b "$BOOTOAT" -d "$TMPDIR" "$TMPDIR/$(basename "$OAT")"
+        elif [[ "$CM_TARGET" =~ .jar$ ]]; then
+            # try to extract classes.dex from boot.oat for framework jars
+            java -jar "$BAKSMALIJAR" deodex -o "$TMPDIR/dexout" -b "$BOOTOAT" -d "$TMPDIR" -e "/$OEM_TARGET" "$BOOTOAT"
+        else
+            continue
+        fi
+
+        java -jar "$SMALIJAR" assemble "$TMPDIR/dexout" -o "$TMPDIR/classes.dex" && break
+    done
+
+    rm -rf "$TMPDIR/dexout"
+}
+
+#
 # init_adb_connection:
 #
 # Starts adb server and waits for the device
