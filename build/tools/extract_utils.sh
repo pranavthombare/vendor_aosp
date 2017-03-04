@@ -793,11 +793,14 @@ function extract() {
                 adb pull "/$FILE" "$DEST"
             fi
         else
-            # Try OEM target first
-            cp "$SRC/$FILE" "$DEST"
-            # if file does not exist try CM target
-            if [ "$?" != "0" ]; then
+            # Try CM target first
+            if [ -f "$SRC/$TARGET" ]; then
                 cp "$SRC/$TARGET" "$DEST"
+            # if file does not exist try OEM target
+            elif [ -f "$SRC/$FILE" ]; then
+                cp "$SRC/$FILE" "$DEST"
+            else
+                printf '    !! file not found in source\n'
             fi
         fi
 
