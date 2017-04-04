@@ -525,13 +525,26 @@ function _adb_connected {
 };
 
 #
-# parse_file_list
+# parse_file_list:
+#
+# $1: input file
+# $2: blob section in file - optional
+#
+# Sets PRODUCT_PACKAGES and PRODUCT_COPY_FILES while parsing the input file
 #
 function parse_file_list() {
     if [ ! -e "$1" ]; then
         echo "$1 does not exist!"
         exit 1
     fi
+
+    if [ $# -eq 2 ]; then
+        LIST=$TMPDIR/files.txt
+        cat $1 | sed -n '/# '"$2"'/I,/^\s*$/p' > $LIST
+    else
+        LIST=$1
+    fi
+
 
     PRODUCT_PACKAGES_LIST=()
     PRODUCT_COPY_FILES_LIST=()
@@ -546,7 +559,7 @@ function parse_file_list() {
             PRODUCT_COPY_FILES_LIST+=("$line")
         fi
 
-    done < <(egrep -v '(^#|^[[:space:]]*$)' "$1" | LC_ALL=C sort | uniq)
+    done < <(egrep -v '(^#|^[[:space:]]*$)' "$LIST" | LC_ALL=C sort | uniq)
 }
 
 #
@@ -734,6 +747,7 @@ function fix_xml() {
 #
 # $1: file containing the list of items to extract
 # $2: path to extracted system folder, an ota zip file, or "adb" to extract from device
+# $3: section in list file to extract - optional
 #
 function extract() {
     if [ ! -e "$1" ]; then
@@ -746,7 +760,7 @@ function extract() {
         exit 1
     fi
 
-    parse_file_list "$1"
+    parse_file_list "$1" "$3"
 
     # Allow failing, so we can try $DEST and/or $FILE
     set +e
