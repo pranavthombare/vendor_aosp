@@ -715,6 +715,21 @@ function init_adb_connection() {
 }
 
 #
+# fix_xml:
+#
+# $1: xml file to fix
+#
+function fix_xml() {
+    local XML="$1"
+    local TEMP_XML="$TMPDIR/`basename "$XML"`.temp"
+
+    grep -a '^<?xml version' "$XML" > "$TEMP_XML"
+    grep -av '^<?xml version' "$XML" >> "$TEMP_XML"
+
+    mv "$TEMP_XML" "$XML"
+}
+
+#
 # extract:
 #
 # $1: file containing the list of items to extract
