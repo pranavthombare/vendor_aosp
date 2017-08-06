@@ -20,6 +20,21 @@ PRODUCT_PACKAGES_LIST=()
 PACKAGE_LIST=()
 VENDOR_STATE=-1
 COMMON=-1
+ARCHES=
+FULLY_DEODEXED=-1
+
+TMPDIR=$(mktemp -d)
+
+#
+# cleanup
+#
+# kill our tmpfiles with fire on exit
+#
+function cleanup() {
+    rm -rf "${TMPDIR:?}"
+}
+
+trap cleanup EXIT INT TERM ERR
 
 #
 # setup_vendor
@@ -659,7 +674,12 @@ function oat2dex() {
         echo "Checking if system is odexed and locating boot.oats..."
         for ARCH in "arm64" "arm" "x86_64" "x86"; do
             mkdir -p "$TMPDIR/system/framework/$ARCH"
-            if get_file "system/framework/$ARCH/" "$TMPDIR/system/framework/" "$SRC"; then
+            if [ -d "$SRC/framework" ] && [ "$SRC" != "adb" ]; then
+                ARCHDIR="framework/$ARCH/"
+            else
+                ARCHDIR="system/framework/$ARCH/"
+            fi
+            if get_file "$ARCHDIR" "$TMPDIR/system/framework/" "$SRC"; then
                 ARCHES+="$ARCH "
             else
                 rmdir "$TMPDIR/system/framework/$ARCH"
