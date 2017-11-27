@@ -41,7 +41,7 @@ trap cleanup 0
 #
 # $1: device name
 # $2: vendor name
-# $3: gzosp root directory
+# $3: LegendROM root directory
 # $4: is common device - optional, default to false
 # $5: cleanup - optional, default to true
 #
@@ -61,20 +61,25 @@ function setup_vendor() {
         exit 1
     fi
 
-    export GZOSP_ROOT="$3"
-    if [ ! -d "$GZOSP_ROOT" ]; then
-        echo "\$GZOSP_ROOT must be set and valid before including this script!"
+    export AOSP_ROOT="$3"
+    if [ ! -d "$AOSP_ROOT" ]; then
+        echo "\$AOSP_ROOT must be set and valid before including this script!"
         exit 1
     fi
 
     export OUTDIR=vendor/"$VENDOR"/"$DEVICE"
-    if [ ! -d "$GZOSP_ROOT/$OUTDIR" ]; then
-        mkdir -p "$GZOSP_ROOT/$OUTDIR"
+    if [ ! -d "$AOSP_ROOT/$OUTDIR" ]; then
+        mkdir -p "$AOSP_ROOT/$OUTDIR"
     fi
 
-    export PRODUCTMK="$GZOSP_ROOT"/"$OUTDIR"/"$DEVICE"-vendor.mk
-    export ANDROIDMK="$GZOSP_ROOT"/"$OUTDIR"/Android.mk
-    export BOARDMK="$GZOSP_ROOT"/"$OUTDIR"/BoardConfigVendor.mk
+    VNDNAME="$6"
+    if [ -z "$VNDNAME" ]; then
+        VNDNAME="$DEVICE"
+    fi
+
+    export PRODUCTMK="$AOSP_ROOT"/"$OUTDIR"/"$VNDNAME"-vendor.mk
+    export ANDROIDMK="$AOSP_ROOT"/"$OUTDIR"/Android.mk
+    export BOARDMK="$AOSP_ROOT"/"$OUTDIR"/BoardConfigVendor.mk
 
     if [ "$4" == "true" ] || [ "$4" == "1" ]; then
         COMMON=1
@@ -713,15 +718,15 @@ function get_file() {
 # Convert apk|jar .odex in the corresposing classes.dex
 #
 function oat2dex() {
-    local CM_TARGET="$1"
+    local AOSP_TARGET="$1"
     local OEM_TARGET="$2"
     local SRC="$3"
     local TARGET=
     local OAT=
 
     if [ -z "$BAKSMALIJAR" ] || [ -z "$SMALIJAR" ]; then
-        export BAKSMALIJAR="$CM_ROOT"/vendor/cm/build/tools/smali/baksmali.jar
-        export SMALIJAR="$CM_ROOT"/vendor/cm/build/tools/smali/smali.jar
+        export BAKSMALIJAR="$AOSP_ROOT"/vendor/aosp/build/tools/smali/baksmali.jar
+        export SMALIJAR="$AOSP_ROOT"/vendor/aosp/build/tools/smali/smali.jar
     fi
 
     # Extract existing boot.oats to the temp folder
@@ -746,11 +751,11 @@ function oat2dex() {
         FULLY_DEODEXED=1 && return 0 # system is fully deodexed, return
     fi
 
-    if [ ! -f "$CM_TARGET" ]; then
+    if [ ! -f "$AOSP_TARGET" ]; then
         return;
     fi
 
-    if grep "classes.dex" "$CM_TARGET" >/dev/null; then
+    if grep "classes.dex" "$AOSP_TARGET" >/dev/null; then
         return 0 # target apk|jar is already odexed, return
     fi
 
@@ -765,7 +770,7 @@ function oat2dex() {
                 echo "WARNING: Deodexing with VDEX. Still experimental"
             fi
             java -jar "$BAKSMALIJAR" deodex -o "$TMPDIR/dexout" -b "$BOOTOAT" -d "$TMPDIR" "$TMPDIR/$(basename "$OAT")"
-        elif [[ "$CM_TARGET" =~ .jar$ ]]; then
+        elif [[ "$AOSP_TARGET" =~ .jar$ ]]; then
             # try to extract classes.dex from boot.oats for framework jars
             # TODO: check if extraction from boot.vdex is needed
             JAROAT="$TMPDIR/system/framework/$ARCH/boot-$(basename ${OEM_TARGET%.*}).oat"
@@ -858,13 +863,14 @@ function extract() {
     local FILELIST=( ${PRODUCT_COPY_FILES_LIST[@]} ${PRODUCT_PACKAGES_LIST[@]} )
     local COUNT=${#FILELIST[@]}
     local SRC="$2"
-    local OUTPUT_ROOT="$GZOSP_ROOT"/"$OUTDIR"/proprietary
+    local OUTPUT_ROOT="$AOSP_ROOT"/"$OUTDIR"/proprietary
+    local OUTPUT_TMP="$TMPDIR"/"$OUTDIR"/proprietary
     if [ "$SRC" = "adb" ]; then
         init_adb_connection
     fi
 
     if [ -f "$SRC" ] && [ "${SRC##*.}" == "zip" ]; then
-        DUMPDIR="$CM_ROOT"/system_dump
+        DUMPDIR="$AOSP_ROOT"/system_dump
 
         # Check if we're working with the same zip that was passed last time.
         # If so, let's just use what's already extracted.
@@ -884,7 +890,7 @@ function extract() {
             # If OTA is block based, extract it.
             elif [ -a "$DUMPDIR"/system.new.dat ]; then
                 echo "Converting system.new.dat to system.img"
-                python "$CM_ROOT"/vendor/cm/build/tools/sdat2img.py "$DUMPDIR"/system.transfer.list "$DUMPDIR"/system.new.dat "$DUMPDIR"/system.img 2>&1
+                python "$AOSP_ROOT"/vendor/aosp/build/tools/sdat2img.py "$DUMPDIR"/system.transfer.list "$DUMPDIR"/system.new.dat "$DUMPDIR"/system.img 2>&1
                 rm -rf "$DUMPDIR"/system.new.dat "$DUMPDIR"/system
                 mkdir "$DUMPDIR"/system "$DUMPDIR"/tmp
                 echo "Requesting sudo access to mount the system.img"
@@ -975,7 +981,7 @@ function extract() {
                 adb pull "/$FILE" "$DEST"
             fi
         else
-            # Try CM target first
+            # Try aOSP target first
             if [ -f "$SRC/$TARGET" ]; then
                 cp "$SRC/$TARGET" "$DEST"
             # if file does not exist try OEM target
@@ -1005,4 +1011,46 @@ function extract() {
 
     # Don't allow failing
     set -e
+}
+
+#
+# extract_firmware:
+#
+# $1: file containing the list of items to extract
+# $2: path to extracted radio folder
+#
+function extract_firmware() {
+    if [ -z "$OUTDIR" ]; then
+        echo "Output dir not set!"
+        exit 1
+    fi
+
+    parse_file_list "$1"
+
+    # Don't allow failing
+    set -e
+
+    local FILELIST=( ${PRODUCT_COPY_FILES_LIST[@]} )
+    local COUNT=${#FILELIST[@]}
+    local SRC="$2"
+    local OUTPUT_DIR="$AOSP_ROOT"/"$OUTDIR"/radio
+
+    if [ "$VENDOR_RADIO_STATE" -eq "0" ]; then
+        echo "Cleaning firmware output directory ($OUTPUT_DIR).."
+        rm -rf "${OUTPUT_DIR:?}/"*
+        VENDOR_RADIO_STATE=1
+    fi
+
+    echo "Extracting $COUNT files in $1 from $SRC:"
+
+    for (( i=1; i<COUNT+1; i++ )); do
+        local FILE="${FILELIST[$i-1]}"
+        printf '  - %s \n' "/radio/$FILE"
+
+        if [ ! -d "$OUTPUT_DIR" ]; then
+            mkdir -p "$OUTPUT_DIR"
+        fi
+        cp "$SRC/$FILE" "$OUTPUT_DIR/$FILE"
+        chmod 644 "$OUTPUT_DIR/$FILE"
+    done
 }
