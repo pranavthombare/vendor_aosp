@@ -20,29 +20,29 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # Backup tool
 PRODUCT_COPY_FILES += \
-    vendor/gzosp/prebuilt/common/bin/backuptool.sh:install/bin/backuptool.sh \
-    vendor/gzosp/prebuilt/common/bin/backuptool.functions:install/bin/backuptool.functions \
-    vendor/gzosp/prebuilt/common/bin/50-gzosp.sh:system/addon.d/50-gzosp.sh
+    vendor/aosp/prebuilt/common/bin/backuptool.sh:install/bin/backuptool.sh \
+    vendor/aosp/prebuilt/common/bin/backuptool.functions:install/bin/backuptool.functions \
+    vendor/aosp/prebuilt/common/bin/50-aosp.sh:system/addon.d/50-aosp.sh
 
 # Backup services whitelist
 PRODUCT_COPY_FILES += \
-    vendor/gzosp/config/permissions/backup.xml:system/etc/sysconfig/backup.xml
+    vendor/aosp/config/permissions/backup.xml:system/etc/sysconfig/backup.xml
 
 # Signature compatibility validation
 PRODUCT_COPY_FILES += \
-    vendor/gzosp/prebuilt/common/bin/otasigcheck.sh:install/bin/otasigcheck.sh
+    vendor/aosp/prebuilt/common/bin/otasigcheck.sh:install/bin/otasigcheck.sh
 
-# Gzosp-specific init file
+# LegendROM-specific init file
 PRODUCT_COPY_FILES += \
-    vendor/gzosp/prebuilt/common/etc/init.local.rc:root/init.gzosp.rc
+    vendor/aosp/prebuilt/common/etc/init.local.rc:root/init.aosp.rc
 
 # Copy LatinIME for gesture typing
 PRODUCT_COPY_FILES += \
-    vendor/gzosp/prebuilt/common/lib/libjni_latinimegoogle.so:system/lib/libjni_latinimegoogle.so
+    vendor/aosp/prebuilt/common/lib/libjni_latinimegoogle.so:system/lib/libjni_latinimegoogle.so
 
 # SELinux filesystem labels
 PRODUCT_COPY_FILES += \
-    vendor/gzosp/prebuilt/common/etc/init.d/50selinuxrelabel:system/etc/init.d/50selinuxrelabel
+    vendor/aosp/prebuilt/common/etc/init.d/50selinuxrelabel:system/etc/init.d/50selinuxrelabel
 
 # Enable SIP+VoIP on all targets
 PRODUCT_COPY_FILES += \
@@ -50,18 +50,18 @@ PRODUCT_COPY_FILES += \
 
 # Don't export PS1 in /system/etc/mkshrc.
 PRODUCT_COPY_FILES += \
-    vendor/gzosp/prebuilt/common/etc/mkshrc:system/etc/mkshrc \
-    vendor/gzosp/prebuilt/common/etc/sysctl.conf:system/etc/sysctl.conf
+    vendor/aosp/prebuilt/common/etc/mkshrc:system/etc/mkshrc \
+    vendor/aosp/prebuilt/common/etc/sysctl.conf:system/etc/sysctl.conf
 
 # Fix Dialer
 PRODUCT_COPY_FILES +=  \
-    vendor/gzosp/prebuilt/common/sysconfig/dialer_experience.xml:system/etc/sysconfig/dialer_experience.xml 
+    vendor/aosp/prebuilt/common/sysconfig/dialer_experience.xml:system/etc/sysconfig/dialer_experience.xml 
 
-# Gzosp-specific startup services
+# LegendROM-specific startup services
 PRODUCT_COPY_FILES += \
-    vendor/gzosp/prebuilt/common/etc/init.d/00banner:system/etc/init.d/00banner \
-    vendor/gzosp/prebuilt/common/etc/init.d/90userinit:system/etc/init.d/90userinit \
-    vendor/gzosp/prebuilt/common/bin/sysinit:system/bin/sysinit
+    vendor/aosp/prebuilt/common/etc/init.d/00banner:system/etc/init.d/00banner \
+    vendor/aosp/prebuilt/common/etc/init.d/90userinit:system/etc/init.d/90userinit \
+    vendor/aosp/prebuilt/common/bin/sysinit:system/bin/sysinit
 
 # Required packages
 PRODUCT_PACKAGES += \
@@ -91,16 +91,7 @@ PRODUCT_PACKAGES += \
     Calculator \
     LatinIME \
     BluetoothExt
-#    WolvesDen \
-#    ThemeInterfacer \
-#    Eleven \
-#    OmniSwitch \
-#    OmniJaws \
-#    OmniStyle \
-#    Turbo \
-#    GZRoms \
-#    Nova \
-#    NovaGoogleCompanion
+
 
 # Extra tools
 PRODUCT_PACKAGES += \
@@ -113,13 +104,6 @@ PRODUCT_PACKAGES += \
     ntfsfix \
     ntfs-3g
 
-# MusicFX advanced effects
-#ifneq ($(TARGET_NO_DSPMANAGER), true)
-#PRODUCT_PACKAGES += \
-#    libcyanogen-dsp \
-#    audio_effects.conf
-#endif
-
 # Custom off-mode charger
 #ifneq ($(WITH_CM_CHARGER),false)
 #PRODUCT_PACKAGES += \
@@ -127,36 +111,6 @@ PRODUCT_PACKAGES += \
 #    cm_charger_res_images \
 #    font_log.png \
 #    libhealthd.cm
-#endif
-
-# DU Utils library
-#PRODUCT_BOOT_JARS += \
-#    org.dirtyunicorns.utils
-
-# DU Utils library
-#PRODUCT_PACKAGES += \
-#    org.dirtyunicorns.utils
-
-#ifeq ($(DEFAULT_ROOT_METHOD),magisk)
-# Magisk Manager
-#PRODUCT_PACKAGES += \
-#    MagiskManager
-
-# Magisk
-#PRODUCT_COPY_FILES += \
-#   vendor/gzosp/prebuilt/common/addon.d/magisk.zip:system/addon.d/magisk.zip
-#endif
-
-#ifeq ($(DEFAULT_ROOT_METHOD),supersu)
-# SuperSU
-#PRODUCT_COPY_FILES += \
-#   vendor/gzosp/prebuilt/common/etc/UPDATE-SuperSU.zip:system/addon.d/UPDATE-SuperSU.zip \
-#   vendor/gzosp/prebuilt/common/etc/init.d/99SuperSUDaemon:system/etc/init.d/99SuperSUDaemon
-#endif
-
-# Explict rootless defined, or none of the root methods defined,
-# default rootless : nothing todo
-#ifeq ($(DEFAULT_ROOT_METHOD),rootless)
 #endif
 
 # Stagefright FFMPEG plugin
@@ -176,7 +130,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # easy way to extend to add more packages
 -include vendor/extra/product.mk
 
-PRODUCT_PACKAGE_OVERLAYS += vendor/gzosp/overlay/common
+PRODUCT_PACKAGE_OVERLAYS += vendor/aosp/overlay/common
 
 # Boot animation include
 ifneq ($(TARGET_SCREEN_WIDTH) $(TARGET_SCREEN_HEIGHT),$(space))
@@ -190,7 +144,7 @@ TARGET_BOOTANIMATION_SIZE := $(shell \
   fi )
 
 # get a sorted list of the sizes
-bootanimation_sizes := $(subst .zip,, $(shell ls vendor/gzosp/prebuilt/common/bootanimation))
+bootanimation_sizes := $(subst .zip,, $(shell ls vendor/aosp/prebuilt/common/bootanimation))
 bootanimation_sizes := $(shell echo -e $(subst $(space),'\n',$(bootanimation_sizes)) | sort -rn)
 
 # find the appropriate size and set
@@ -208,37 +162,37 @@ $(foreach size,$(bootanimation_sizes), $(call check_and_set_bootanimation,$(size
 
 ifeq ($(TARGET_BOOTANIMATION_HALF_RES),true)
 PRODUCT_COPY_FILES += \
-    vendor/gzosp/prebuilt/common/bootanimation/halfres/$(TARGET_BOOTANIMATION_NAME).zip:system/media/bootanimation.zip
+    vendor/aosp/prebuilt/common/bootanimation/halfres/$(TARGET_BOOTANIMATION_NAME).zip:system/media/bootanimation.zip
 else
 PRODUCT_COPY_FILES += \
-    vendor/gzosp/prebuilt/common/bootanimation/$(TARGET_BOOTANIMATION_NAME).zip:system/media/bootanimation.zip
+    vendor/aosp/prebuilt/common/bootanimation/$(TARGET_BOOTANIMATION_NAME).zip:system/media/bootanimation.zip
 endif
 endif
 
 # Versioning System
-# gzosp first version.
-PRODUCT_VERSION_MAJOR = 8.0
-PRODUCT_VERSION_MINOR = Alpha
+# LegendROM first version.
+PRODUCT_VERSION_MAJOR = 8.1
+PRODUCT_VERSION_MINOR = Beta
 PRODUCT_VERSION_MAINTENANCE = 1.0
-GZOSP_POSTFIX := -$(shell date +"%Y%m%d-%H%M")
-ifdef GZOSP_BUILD_EXTRA
-    GZOSP_POSTFIX := -$(GZOSP_BUILD_EXTRA)
+LEGENDROM_POSTFIX := -$(shell date +"%Y%m%d-%H%M")
+ifdef LEGENDROM_BUILD_EXTRA
+    LEGENDROM_POSTFIX := -$(LEGENDROM_BUILD_EXTRA)
 endif
 
-ifndef GZOSP_BUILD_TYPE
-    GZOSP_BUILD_TYPE := UNOFFICIAL
+ifndef LEGENDROM_BUILD_TYPE
+    LEGENDROM_BUILD_TYPE := OFFICIAL
 endif
 
 # Set all versions
-GZOSP_VERSION := Gzosp-$(GZOSP_BUILD)-$(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR).$(PRODUCT_VERSION_MAINTENANCE)-$(GZOSP_BUILD_TYPE)$(GZOSP_POSTFIX)
-GZOSP_MOD_VERSION := Gzosp-$(GZOSP_BUILD)-$(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR).$(PRODUCT_VERSION_MAINTENANCE)-$(GZOSP_BUILD_TYPE)$(GZOSP_POSTFIX)
+LEGENDROM_VERSION := LegendROM-$(LEGENDROM_BUILD)-$(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR).$(PRODUCT_VERSION_MAINTENANCE)-$(LEGENROM_BUILD_TYPE)$(LEGENDROM_POSTFIX)
+LEGENDROM_MOD_VERSION := LegendROM-$(LEGENDROM_BUILD)-$(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR).$(PRODUCT_VERSION_MAINTENANCE)-$(LEGENROM_BUILD_TYPE)$(LEGENDROM_POSTFIX)
 
 PRODUCT_PROPERTY_OVERRIDES += \
     BUILD_DISPLAY_ID=$(BUILD_ID) \
-    gzosp.ota.version=$(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR).$(PRODUCT_VERSION_MAINTENANCE) \
-    ro.gzosp.version=$(GZOSP_VERSION) \
-    ro.modversion=$(GZOSP_MOD_VERSION) \
-    ro.gzosp.buildtype=$(GZOSP_BUILD_TYPE)
+    legendrom.ota.version=$(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR).$(PRODUCT_VERSION_MAINTENANCE) \
+    ro.legendrom.version=$(LEGENDROM_VERSION) \
+    ro.modversion=$(LEGENDROM_MOD_VERSION) \
+    ro.legendrom.buildtype=$(LEGENROM_BUILD_TYPE)
 
-EXTENDED_POST_PROCESS_PROPS := vendor/gzosp/tools/gzosp_process_props.py
+EXTENDED_POST_PROCESS_PROPS := vendor/aosp/tools/aosp_process_props.py
 
