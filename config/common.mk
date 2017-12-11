@@ -130,7 +130,15 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # easy way to extend to add more packages
 -include vendor/extra/product.mk
 
+<<<<<<< HEAD
 PRODUCT_PACKAGE_OVERLAYS += vendor/aosp/overlay/common
+=======
+PRODUCT_PACKAGES += \
+    AndroidDarkThemeOverlay \
+    SettingsDarkThemeOverlay
+
+PRODUCT_PACKAGE_OVERLAYS += vendor/gzosp/overlay/common
+>>>>>>> 38e2647... Build new overlays
 
 # Boot animation include
 ifneq ($(TARGET_SCREEN_WIDTH) $(TARGET_SCREEN_HEIGHT),$(space))
