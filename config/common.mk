@@ -203,6 +203,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.legendrom.buildtype=$(LEGENROM_BUILD_TYPE)
 
 # Google sounds
-include vendor/androidx/google/GoogleAudio.mk
+include vendor/gzosp/google/GoogleAudio.mk
 
 EXTENDED_POST_PROCESS_PROPS := vendor/gzosp/tools/gzosp_process_props.py
